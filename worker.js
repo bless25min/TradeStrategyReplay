@@ -6,6 +6,15 @@ const LEGACY_SOURCES = {
   '/legacy-source/BTCUSD_M5.csv': `${RAW_BASE}/BTCUSD_M5.csv`,
   '/legacy-source/SoyaRecord.json': `${RAW_BASE}/SoyaRecord.json`,
   '/legacy-source/KentRecord.json': `${RAW_BASE}/KentRecord.json`,
+  // Compatibility aliases for the original relative fetch paths. These prevent
+  // SPA fallback from returning index.html when a cached/original main.js asks
+  // for SoyaRecord.json or KentRecord.json under a mode directory.
+  '/SoyaRecord.json': `${RAW_BASE}/SoyaRecord.json`,
+  '/KentRecord.json': `${RAW_BASE}/KentRecord.json`,
+  '/classic/SoyaRecord.json': `${RAW_BASE}/SoyaRecord.json`,
+  '/classic/KentRecord.json': `${RAW_BASE}/KentRecord.json`,
+  '/performance/SoyaRecord.json': `${RAW_BASE}/SoyaRecord.json`,
+  '/performance/KentRecord.json': `${RAW_BASE}/KentRecord.json`,
 };
 
 const fetchLegacy = async (upstream, contentType) => {
@@ -75,6 +84,7 @@ const ghostReplay = async (url) => {
         time: action.time,
         price: action.price,
         ...(Number.isFinite(Number(action.qty ?? action.volume)) ? { qty: Number(action.qty ?? action.volume) } : {}),
+        ...(Number.isFinite(Number(action.profit)) ? { profit: Number(action.profit) } : {}),
       })),
     },
   ], {

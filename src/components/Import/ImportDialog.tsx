@@ -36,11 +36,12 @@ export const ImportDialog = ({ open, onClose }: Props) => {
       if (result.errors.length) return;
 
       const id = `import-${Date.now()}`;
+      const lastQuote = quotes[quotes.length - 1];
       const meta: StrategyMeta = {
         id, name, platform, instrument, symbol, timeframe, dataType,
         timezone: 'Asia/Taipei', utcOffset,
         startDate: quotes[0] ? new Date(quotes[0].time * 1000).toISOString() : undefined,
-        endDate: quotes.at(-1) ? new Date(quotes.at(-1)!.time * 1000).toISOString() : undefined,
+        endDate: lastQuote ? new Date(lastQuote.time * 1000).toISOString() : undefined,
         dataSource: 'Browser imported CSV',
       };
       setBundle({ meta, quotes, trades });

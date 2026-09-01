@@ -11,11 +11,15 @@ import {
 } from 'lightweight-charts';
 import { useStrategyStore } from '../../store/useStrategyStore';
 
+interface MarkerPluginRef {
+  setMarkers: (markers: SeriesMarker<UTCTimestamp>[]) => void;
+}
+
 export const StrategyChart = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const markerPluginRef = useRef<ReturnType<typeof createSeriesMarkers> | null>(null);
+  const markerPluginRef = useRef<MarkerPluginRef | null>(null);
 
   const quotes = useStrategyStore((state) => state.quotes);
   const strategyTrades = useStrategyStore((state) => state.trades);
@@ -103,7 +107,7 @@ export const StrategyChart = () => {
     const markerPlugin = createSeriesMarkers(series, []);
     chartRef.current = chart;
     seriesRef.current = series;
-    markerPluginRef.current = markerPlugin;
+    markerPluginRef.current = markerPlugin as MarkerPluginRef;
 
     const resize = () => {
       if (containerRef.current) chart.applyOptions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });

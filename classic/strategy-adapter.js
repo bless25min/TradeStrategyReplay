@@ -126,7 +126,7 @@
   };
 
   const applyMarket = (bars, symbol, timeframe) => {
-    if (!window.state) throw new Error('交易模擬器尚未初始化。');
+    if (typeof state === 'undefined') throw new Error('交易模擬器尚未初始化。');
     if (!bars.length) throw new Error('行情檔沒有可用 OHLC 資料。');
     state.selectedInstrument = symbol;
     state.selectedTimeframe = timeframe;
@@ -138,7 +138,7 @@
   };
 
   const applyStrategy = (actions, label) => {
-    if (!window.state) throw new Error('交易模擬器尚未初始化。');
+    if (typeof state === 'undefined') throw new Error('交易模擬器尚未初始化。');
     const instrument = state.selectedInstrument;
     const filtered = actions.filter((action) => Number.isFinite(action.time) && Number.isFinite(action.price) && action.qty > 0);
     if (!filtered.length) throw new Error('沒有可用策略交易紀錄。');

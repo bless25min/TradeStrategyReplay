@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Upload, X } from 'lucide-react';
-import type { StrategyDataType, StrategyMeta, ValidationResult } from '../../types';
+import type { MarketMeta, StrategyDataType, StrategyMeta, ValidationResult } from '../../types';
 import { parseQuotesCsv, parseTradesCsv } from '../../utils/strategyParser';
 import { validateStrategyData } from '../../utils/validation';
 import { useStrategyStore } from '../../store/useStrategyStore';
@@ -8,7 +8,7 @@ import { useStrategyStore } from '../../store/useStrategyStore';
 interface Props { open: boolean; onClose: () => void; }
 
 export const ImportDialog = ({ open, onClose }: Props) => {
-  const setBundle = useStrategyStore((state) => state.setBundle);
+  const setImportedBundle = useStrategyStore((state) => state.setImportedBundle);
   const [name, setName] = useState('匯入策略');
   const [platform, setPlatform] = useState('合作券商 / 期貨商');
   const [instrument, setInstrument] = useState('台指期');
@@ -35,16 +35,37 @@ export const ImportDialog = ({ open, onClose }: Props) => {
       setValidation(result);
       if (result.errors.length) return;
 
-      const id = `import-${Date.now()}`;
+      const stamp = Date.now();
+      const marketId = `import-market-${stamp}`;
+      const strategyId = `import-strategy-${stamp}`;
       const lastQuote = quotes[quotes.length - 1];
-      const meta: StrategyMeta = {
-        id, name, platform, instrument, symbol, timeframe, dataType,
-        timezone: 'Asia/Taipei', utcOffset,
+      const marketMeta: MarketMeta = {
+        id: marketId,
+        instrument,
+        symbol,
+        timeframe,
+        timezone: 'Asia/Taipei',
+        utcOffset,
+        quoteSource: 'Browser imported CSV',
+        contractMode: 'actual',
+        quoteFormat: 'csv',
+        quoteFiles: [],
+      };
+      const strategyMeta: StrategyMeta = {
+        id: strategyId,
+        name,
+        platform,
+        marketId,
+        dataType,
         startDate: quotes[0] ? new Date(quotes[0].time * 1000).toISOString() : undefined,
         endDate: lastQuote ? new Date(lastQuote.time * 1000).toISOString() : undefined,
-        dataSource: 'Browser imported CSV',
+        tradeSource: 'Browser imported CSV',
       };
-      setBundle({ meta, quotes, trades });
+
+      setImportedBundle({
+        market: { meta: marketMeta, quotes },
+        strategy: { meta: strategyMeta, trades },
+      });
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '資料匯入失敗。');
@@ -53,7 +74,7 @@ export const ImportDialog = ({ open, onClose }: Props) => {
 
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
     <div className="import-dialog">
-      <div className="dialog-heading"><div><span className="eyebrow-text">LOCAL IMPORT</span><h2>匯入策略資料</h2><p>資料只在目前瀏覽器中解析，不會自動上傳。</p></div><button className="icon-button" onClick={onClose}><X size={18} /></button></div>
+      <div className="dialog-heading"><div><span className="eyebrow-text">LOCAL IMPORT</span><h2>匯入策略資料</h2><p>CSV 是匯入格式；載入後會轉成 Market / Strategy 標準資料模型，資料不會自動上傳。</p></div><button className="icon-button" onClick={onClose}><X size={18} /></button></div>
       <div className="form-grid">
         <label>策略名稱<input value={name} onChange={(e) => setName(e.target.value)} /></label>
         <label>上架平台<input value={platform} onChange={(e) => setPlatform(e.target.value)} /></label>

@@ -11,6 +11,6 @@
   "contractMode": "continuous",
   "quoteFormat": "csv",
   "quoteFiles": [
-    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/XAUUSD_M15.csv"
+    "/legacy-source/XAUUSD_M15.csv"
   ]
 }

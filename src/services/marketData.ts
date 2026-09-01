@@ -13,6 +13,11 @@ const normalizeBars = (bars: BarData[]): BarData[] => {
   return [...deduped.values()].sort((a, b) => a.time - b.time);
 };
 
+const resolveDataUrl = (base: string, file: string): string => {
+  if (/^https?:\/\//i.test(file) || file.startsWith('/')) return file;
+  return `${base}/${file}`;
+};
+
 export const loadMarketCatalog = async (): Promise<MarketIndexItem[]> => {
   const response = await fetch('/markets/index.json');
   if (!response.ok) throw new Error('無法讀取市場清單。');
@@ -26,7 +31,7 @@ export const loadMarketBundle = async (marketId: string): Promise<MarketBundle> 
   const meta = (await metaResponse.json()) as MarketMeta;
 
   const chunks = await Promise.all(meta.quoteFiles.map(async (file) => {
-    const url = file.startsWith('/') ? file : `${base}/${file}`;
+    const url = resolveDataUrl(base, file);
     if ((meta.quoteFormat ?? (file.endsWith('.json') ? 'json' : 'csv')) === 'json') {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`讀取市場資料失敗：${url} (${response.status})`);

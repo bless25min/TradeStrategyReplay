@@ -3,8 +3,7 @@
     "id": "demo-txf",
     "name": "DEMO｜策略歷史重播",
     "platform": "示範平台",
-    "instrument": "台指期",
-    "timeframe": "15分鐘",
+    "marketId": "demo-txf",
     "dataType": "backtest"
   }
 ]

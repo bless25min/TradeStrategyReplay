@@ -1,86 +1,71 @@
 # TradeStrategyReplay Deployment
 
-本專案使用獨立 Cloudflare Pages project：
+本專案建議直接使用 Cloudflare Pages 的 GitHub integration 部署，不需要 Wrangler 或額外的 GitHub Actions deploy workflow。
+
+## Cloudflare Pages 設定
+
+在 Cloudflare Dashboard：
+
+`Workers & Pages → Create application → Pages → Connect to Git`
+
+選擇 GitHub repository：
+
+```text
+bless25min/TradeStrategyReplay
+```
+
+設定：
+
+```text
+Production branch: main
+Build command: npm run build
+Build output directory: dist
+Root directory: /
+```
+
+Project name 建議使用：
 
 ```text
 trade-strategy-replay
 ```
 
-預期 Pages 網址：
+部署後網址會是：
 
 ```text
 https://trade-strategy-replay.pages.dev
 ```
 
-這個部署設定不會修改或覆蓋 `SoyaPlayableAd` / `soyaplayablead.pages.dev`。
+每次 push 到 `main`，Cloudflare Pages 會自動重新 build 與部署；其他 branch / PR 可產生 preview deployment。
 
-## 一次性設定
+## 與 SoyaPlayableAd 隔離
 
-在 GitHub repository `bless25min/TradeStrategyReplay` 的：
-
-`Settings → Secrets and variables → Actions → Repository secrets`
-
-新增兩個只給本專案使用的 Secrets：
+只要建立新的 Pages project 並選擇 `TradeStrategyReplay` repository，就不會影響：
 
 ```text
-TRADE_STRATEGY_REPLAY_CF_API_TOKEN
-TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID
+SoyaPlayableAd
+soyaplayablead.pages.dev
 ```
 
-Cloudflare API Token 必須具有建立與部署 Cloudflare Pages project 所需的帳號權限。請只授權需要部署的 Cloudflare Account，不要把 Token 寫進 repository。
-
-## 第一次部署
-
-GitHub：
-
-`Actions → Deploy TradeStrategyReplay to Cloudflare Pages → Run workflow`
-
-Workflow 會依序：
-
-1. `npm install`
-2. `npm run build`
-3. 檢查本專案專用 Cloudflare Secrets
-4. 檢查 `trade-strategy-replay` Pages project 是否存在
-5. 若不存在，只建立 `trade-strategy-replay`
-6. 將 `dist/` 發布到該 project 的 `main` production branch
-
-部署 workflow 不會使用 `soyaplayablead` 作為 project name，也不包含舊專案的 Worker / LINE Login 設定。
-
-## Cloudflare Pages build contract
-
-Repository 已固定：
-
-```text
-Build command: npm run build
-Output directory: dist
-Project name: trade-strategy-replay
-Production branch: main
-```
-
-`wrangler.toml`：
-
-```toml
-name = "trade-strategy-replay"
-pages_build_output_dir = "./dist"
-```
+請不要把新 repository 接到既有 `soyaplayablead` Pages project，也不要重新綁定舊專案正在使用的 hostname。
 
 ## 靜態站設定
 
-`public/_redirects` 提供 SPA fallback：
+Repository 已包含：
 
 ```text
-/* /index.html 200
+public/_redirects
+public/_headers
 ```
 
-`public/_headers` 提供基本安全標頭與 assets / markets / strategies cache policy。
+`_redirects` 提供 SPA fallback；`_headers` 提供基本安全標頭與靜態資料 cache policy。
 
-## 後續自訂網域
+## 自訂網域
 
-確認 `trade-strategy-replay.pages.dev` 正常後，再於這個 Pages project 綁定獨立子網域，例如：
+確認 `trade-strategy-replay.pages.dev` 正常後，再於這個新 Pages project 綁定獨立子網域，例如：
 
 ```text
 replay.wintrade.tw
 strategy.wintrade.tw
 ```
 
-不要移除或重新指向既有 `SoyaPlayableAd` 使用的 hostname。
+不要移除或重新指向既有 SoyaPlayableAd 使用中的網域。

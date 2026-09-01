@@ -1,18 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { useMarketStore } from '../store/useMarketStore';
+import { interpolateReplayBar } from '../utils/replayFrame';
 
-const BASE_MS_PER_BAR = 500;
+const BASE_MS_PER_BAR = 1200;
 
 export const useReplayLoop = (): void => {
   const mode = useMarketStore((state) => state.mode);
   const isPlaying = useMarketStore((state) => state.isPlaying);
   const lastFrame = useRef<number | null>(null);
-  const accumulator = useRef(0);
 
   useEffect(() => {
     if (mode !== 'replay' || !isPlaying) {
       lastFrame.current = null;
-      accumulator.current = 0;
       return undefined;
     }
 
@@ -20,20 +19,33 @@ export const useReplayLoop = (): void => {
     const loop = (now: number) => {
       const store = useMarketStore.getState();
       if (!store.isPlaying || store.mode !== 'replay') return;
-
-      if (lastFrame.current == null) lastFrame.current = now;
-      const delta = now - lastFrame.current;
-      lastFrame.current = now;
-      accumulator.current += (delta * store.speed) / BASE_MS_PER_BAR;
-
-      const steps = Math.floor(accumulator.current);
-      if (steps >= 1) {
-        accumulator.current -= steps;
-        const nextIndex = Math.min(store.currentIndex + steps, store.quotes.length - 1);
-        store.setCurrentIndex(nextIndex);
-        if (nextIndex >= store.quotes.length - 1) store.setPlaying(false);
+      if (!store.quotes.length) {
+        store.setPlaying(false);
+        return;
       }
 
+      if (lastFrame.current == null) lastFrame.current = now;
+      const delta = Math.min(100, now - lastFrame.current);
+      lastFrame.current = now;
+
+      let index = store.currentIndex;
+      let progress = store.barProgress + (delta / BASE_MS_PER_BAR) * store.speed;
+
+      while (progress >= 1 && index < store.quotes.length - 1) {
+        progress -= 1;
+        index += 1;
+      }
+
+      if (index >= store.quotes.length - 1 && progress >= 1) {
+        const finalBar = store.quotes[store.quotes.length - 1];
+        store.setReplayFrame(store.quotes.length - 1, 1, finalBar.close);
+        store.setPlaying(false);
+        return;
+      }
+
+      const activeBar = store.quotes[index];
+      const frame = interpolateReplayBar(activeBar, progress);
+      store.setReplayFrame(index, progress, frame.price);
       frameId = requestAnimationFrame(loop);
     };
 

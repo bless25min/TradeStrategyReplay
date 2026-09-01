@@ -1,0 +1,17 @@
+{
+  "id": "legacy-soya-xauusd",
+  "name": "SOYA｜原專案交易紀錄",
+  "platform": "SoyaPlayableAd Legacy Demo",
+  "marketId": "legacy-xauusd-m15",
+  "dataType": "paper",
+  "tradeSource": "SoyaPlayableAd / SoyaRecord.json",
+  "tradeFormat": "legacy-actions",
+  "tradeFiles": [
+    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/SoyaRecord.json"
+  ],
+  "legacySymbol": "XAUUSD",
+  "disclaimer": "暫時沿用原 SoyaPlayableAd 歷史資料作為功能驗證，不代表券商正式策略或績效。",
+  "initialBalance": 100000,
+  "contractSize": 100,
+  "leverage": 500
+}

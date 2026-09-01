@@ -1,21 +1,20 @@
 (() => {
-  // This variant intentionally keeps the original trading/chart engine and disables
-  // game-only presentation. It then mounts the original EquityRace engine as the
-  // primary comparison between the user's return and the selected strategy return.
+  // Keep the original trading/chart engine, remove game-only presentation, and
+  // use the original EquityRace engine as a real performance comparison track.
   window.initRPG = null;
   window.createRPGOverlay = null;
+
+  let currentLaneMaxPx = 1;
+  let currentStrategyLabel = '策略';
 
   const css = document.createElement('style');
   css.id = 'tsr-performance-style';
   css.textContent = `
-    /* Remove game-only presentation; keep trading/chart controls intact. */
     #rpg-panel,.loader-scene,#challengeInfo,#btnEndGame,#notification-container,
     .tutorial-highlight,.tutorial-message,.achievements-section,.bonus-challenge-section,
     #endGameModal,#stageCompleteModal,#challengeFailedModal,#nightmareRulesModal,
     .wave-timer,.footer-ad{display:none!important}
-    body{background:#fff}
-    .main-container-v9{padding-bottom:0}
-    .chart-container-v9{padding-bottom:8px}
+    body{background:#fff}.main-container-v9{padding-bottom:0}.chart-container-v9{padding-bottom:8px}
 
     #tsr-performance-race{
       position:absolute;left:14px;right:74px;bottom:10px;z-index:850;
@@ -113,11 +112,12 @@
     const mount = document.getElementById('tsr-race-mount');
     if (!shell || !mount || !state.m5GameData?.length) return false;
     const ghosts = strategyGhosts();
+    currentStrategyLabel = String(ghosts[0]?.label || '策略');
     const first = state.m5GameData[0]?.time ?? 0;
     const last = state.m5GameData[state.m5GameData.length - 1]?.time ?? first;
     const halfTrack = Math.max(100, (mount.clientWidth || 500) / 2 - 44);
-    // EquityRace maps 100 percentage points to laneMaxPx. We want +/-20% to fill the track.
-    const laneMaxPx = halfTrack * 5;
+    // EquityRace maps 100 percentage points to laneMaxPx. +/-20% should fill the track.
+    currentLaneMaxPx = halfTrack * 5;
 
     window.EquityRace.mount(mount);
     window.EquityRace.wireAdapters({
@@ -127,7 +127,7 @@
       getLastPrice: () => Number(typeof getCurrentPrice === 'function' ? getCurrentPrice() : state.m5GameData?.[state.m5Index]?.close),
       getPriceAtMs: () => null,
       getYouLabel: () => '你',
-      getLaneMaxPx: () => laneMaxPx,
+      getLaneMaxPx: () => currentLaneMaxPx,
       getInitialBalance: () => Number(CONFIG.INITIAL_BALANCE) || 10000,
       getContractSize: () => Number(CONFIG.CONTRACT_SIZE) || 100,
       getContextKey: () => `${state.selectedInstrument}|${first}|${last}|${ghosts.map((g) => g.label).join(',')}`,
@@ -141,21 +141,31 @@
     return true;
   };
 
-  const parsePct = (text) => {
-    const match = String(text || '').match(/([+\-−]?\d+(?:\.\d+)?)%/);
-    if (!match) return null;
-    return Number(match[1].replace('−', '-'));
+  const xFromChip = (chip) => {
+    const transform = String(chip?.style?.transform || '');
+    const match = transform.match(/translateX\((-?\d+(?:\.\d+)?)px\)/);
+    return match ? Number(match[1]) : 0;
   };
 
-  const updateSummary = () => {
+  const pctFromChip = (chip) => currentLaneMaxPx > 0 ? (xFromChip(chip) / currentLaneMaxPx) * 100 : 0;
+
+  const updateLabelsAndSummary = () => {
     const summary = document.getElementById('tsr-race-summary');
     const lane = document.getElementById('equity-race');
     if (!summary || !lane) return;
     const chips = [...lane.querySelectorAll('.equity-race-chip')];
     const youChip = chips.find((chip) => chip.classList.contains('you'));
     const strategyChip = chips.find((chip) => !chip.classList.contains('you'));
-    const you = parsePct(youChip?.textContent) ?? 0;
-    const strategy = parsePct(strategyChip?.textContent) ?? 0;
+
+    // User return comes directly from current equity. Strategy return is inferred from the
+    // exact percentage-to-X mapping used by EquityRace, so both remain comparable.
+    const initial = Number(CONFIG.INITIAL_BALANCE) || 10000;
+    const you = ((Number(state.equity) || initial) / initial - 1) * 100;
+    const strategy = strategyChip ? pctFromChip(strategyChip) : 0;
+
+    if (youChip) youChip.textContent = `你 ${you >= 0 ? '+' : ''}${you.toFixed(2)}%`;
+    if (strategyChip) strategyChip.textContent = `${currentStrategyLabel} ${strategy >= 0 ? '+' : ''}${strategy.toFixed(2)}%`;
+
     const gap = you - strategy;
     summary.className = `tsr-race-summary ${gap > 0.005 ? 'you-lead' : gap < -0.005 ? 'strategy-lead' : ''}`;
     if (!strategyChip) summary.textContent = `你 ${you >= 0 ? '+' : ''}${you.toFixed(2)}% ｜ 策略尚未進場`;
@@ -182,7 +192,7 @@
             window.EquityRace.updateAtBar({ toMs: nowMs() });
           }
           window.EquityRace.onBarProgress({ progress: state.barAnimationProgress || 0 });
-          updateSummary();
+          updateLabelsAndSummary();
         }
       }
     } catch (error) {

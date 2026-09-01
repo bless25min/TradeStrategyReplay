@@ -1,5 +1,17 @@
 [
   {
+    "id": "legacy-xauusd-m15",
+    "instrument": "黃金 XAUUSD",
+    "symbol": "XAUUSD",
+    "timeframe": "15分鐘"
+  },
+  {
+    "id": "legacy-nas100-m15",
+    "instrument": "NASDAQ 100",
+    "symbol": "NAS100",
+    "timeframe": "15分鐘"
+  },
+  {
     "id": "demo-txf",
     "instrument": "台指期",
     "symbol": "TXF",

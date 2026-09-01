@@ -7,7 +7,7 @@
   "tradeSource": "SoyaPlayableAd / KentRecord.json",
   "tradeFormat": "legacy-actions",
   "tradeFiles": [
-    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/KentRecord.json"
+    "/legacy-source/KentRecord.json"
   ],
   "legacySymbol": "NAS100",
   "disclaimer": "暫時沿用原 SoyaPlayableAd 歷史資料作為功能驗證，不代表券商正式策略或績效。",

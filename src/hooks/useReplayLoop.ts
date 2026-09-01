@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { useStrategyStore } from '../store/useStrategyStore';
+import { useMarketStore } from '../store/useMarketStore';
 
 const BASE_MS_PER_BAR = 500;
 
 export const useReplayLoop = (): void => {
-  const mode = useStrategyStore((state) => state.mode);
-  const isPlaying = useStrategyStore((state) => state.isPlaying);
+  const mode = useMarketStore((state) => state.mode);
+  const isPlaying = useMarketStore((state) => state.isPlaying);
   const lastFrame = useRef<number | null>(null);
   const accumulator = useRef(0);
 
@@ -18,7 +18,7 @@ export const useReplayLoop = (): void => {
 
     let frameId = 0;
     const loop = (now: number) => {
-      const store = useStrategyStore.getState();
+      const store = useMarketStore.getState();
       if (!store.isPlaying || store.mode !== 'replay') return;
 
       if (lastFrame.current == null) lastFrame.current = now;

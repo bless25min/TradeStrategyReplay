@@ -11,7 +11,10 @@ export const parseTimestamp = (value: string | number, utcOffset = '+08:00'): nu
     return numeric > 10_000_000_000 ? Math.floor(numeric / 1000) : Math.floor(numeric);
   }
 
-  let normalized = raw.replace(/\//g, '-').replace(' ', 'T');
+  let normalized = raw
+    .replace(/^(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3')
+    .replace(/\//g, '-')
+    .replace(' ', 'T');
   if (!HAS_TIMEZONE.test(normalized)) normalized += utcOffset;
 
   const timestamp = Date.parse(normalized);

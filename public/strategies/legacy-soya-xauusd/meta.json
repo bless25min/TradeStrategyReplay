@@ -7,7 +7,7 @@
   "tradeSource": "SoyaPlayableAd / SoyaRecord.json",
   "tradeFormat": "legacy-actions",
   "tradeFiles": [
-    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/SoyaRecord.json"
+    "/legacy-source/SoyaRecord.json"
   ],
   "legacySymbol": "XAUUSD",
   "disclaimer": "暫時沿用原 SoyaPlayableAd 歷史資料作為功能驗證，不代表券商正式策略或績效。",

@@ -1,20 +1,21 @@
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import { useStrategyStore } from '../../store/useStrategyStore';
+import { useMarketStore } from '../../store/useMarketStore';
+import { useTradingStore } from '../../store/useTradingStore';
 
 export const TradingControls = () => {
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
-  const mode = useStrategyStore((state) => state.mode);
-  const balance = useStrategyStore((state) => state.balance);
-  const equity = useStrategyStore((state) => state.equity);
-  const floatingPL = useStrategyStore((state) => state.floatingPL);
-  const openCount = useStrategyStore((state) => state.openManualPositions.length);
-  const placeManualOrder = useStrategyStore((state) => state.placeManualOrder);
-  const resetManualTrading = useStrategyStore((state) => state.resetManualTrading);
+  const mode = useMarketStore((state) => state.mode);
+  const balance = useTradingStore((state) => state.balance);
+  const equity = useTradingStore((state) => state.equity);
+  const floatingPL = useTradingStore((state) => state.floatingPL);
+  const openCount = useTradingStore((state) => state.openPositions.length);
+  const placeOrder = useTradingStore((state) => state.placeOrder);
+  const reset = useTradingStore((state) => state.reset);
 
   const place = (side: 'LONG' | 'SHORT') => {
-    const error = placeManualOrder(side, quantity);
+    const error = placeOrder(side, quantity);
     setMessage(error);
   };
 
@@ -29,7 +30,7 @@ export const TradingControls = () => {
       <label>數量<input type="number" min="0.01" step="0.01" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} /></label>
       <button className="buy-button" disabled={mode !== 'replay'} onClick={() => place('LONG')}>BUY 多單</button>
       <button className="sell-button" disabled={mode !== 'replay'} onClick={() => place('SHORT')}>SELL 空單</button>
-      <button className="reset-button" onClick={() => { resetManualTrading(); setMessage(null); }} title="重設模擬帳戶"><RotateCcw size={16} />重設</button>
+      <button className="reset-button" onClick={() => { reset(); setMessage(null); }} title="重設模擬帳戶"><RotateCcw size={16} />重設</button>
     </div>
     {mode !== 'replay' && <div className="control-hint">切換到「歷史重播」後即可在同一段歷史行情中自行模擬交易，並與策略進出場比較。</div>}
     {message && <div className="control-error">{message}</div>}

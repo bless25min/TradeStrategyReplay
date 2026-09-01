@@ -13,6 +13,7 @@ import { useMarketStore } from '../../store/useMarketStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useTradingStore } from '../../store/useTradingStore';
 import { findContainingBar } from '../../utils/barLookup';
+import { interpolateReplayBar, replayTimestamp } from '../../utils/replayFrame';
 
 interface MarkerPluginRef {
   setMarkers: (markers: SeriesMarker<UTCTimestamp>[]) => void;
@@ -36,65 +37,62 @@ export const StrategyChart = () => {
   const quotes = useMarketStore((state) => state.quotes);
   const mode = useMarketStore((state) => state.mode);
   const currentIndex = useMarketStore((state) => state.currentIndex);
+  const barProgress = useMarketStore((state) => state.barProgress);
   const strategyTrades = useStrategyStore((state) => state.trades);
   const selectedTradeId = useStrategyStore((state) => state.selectedTradeId);
   const manualOpen = useTradingStore((state) => state.openPositions);
   const manualHistory = useTradingStore((state) => state.history);
 
-  const visibleQuotes = useMemo(
-    () => mode === 'overview' ? quotes : quotes.slice(0, currentIndex + 1),
-    [quotes, mode, currentIndex],
-  );
-  const currentTime = visibleQuotes[visibleQuotes.length - 1]?.time ?? 0;
+  const currentTime = useMemo(() => {
+    if (!quotes.length) return 0;
+    if (mode === 'overview') return quotes[quotes.length - 1].time;
+    return replayTimestamp(quotes, currentIndex, barProgress);
+  }, [quotes, mode, currentIndex, barProgress]);
 
   const markers = useMemo(() => {
     const result: SeriesMarker<UTCTimestamp>[] = [];
-    const pushStrategyMarker = (time: number, marker: BarMarkerInput) => {
+    const pushMarker = (time: number, marker: BarMarkerInput) => {
       const bar = findContainingBar(quotes, time);
-      if (bar) {
-        result.push({ ...marker, time: bar.time as UTCTimestamp } as SeriesMarker<UTCTimestamp>);
-      }
+      if (bar) result.push({ ...marker, time: bar.time as UTCTimestamp } as SeriesMarker<UTCTimestamp>);
     };
 
     strategyTrades.forEach((trade) => {
       if (mode === 'overview' || trade.entryTime <= currentTime) {
-        pushStrategyMarker(trade.entryTime, {
+        pushMarker(trade.entryTime, {
           position: trade.side === 'LONG' ? 'belowBar' : 'aboveBar',
-          color: trade.side === 'LONG' ? '#2563eb' : '#e11d48',
+          color: trade.side === 'LONG' ? '#1677ff' : '#e5484d',
           shape: trade.side === 'LONG' ? 'arrowUp' : 'arrowDown',
-          text: `${trade.side === 'LONG' ? '策略多進' : '策略空進'} ${trade.entryPrice}`,
-          size: 1.4,
+          text: trade.side === 'LONG' ? '策略多' : '策略空',
+          size: 1.35,
         });
       }
       if (mode === 'overview' || trade.exitTime <= currentTime) {
-        pushStrategyMarker(trade.exitTime, {
+        pushMarker(trade.exitTime, {
           position: trade.side === 'LONG' ? 'aboveBar' : 'belowBar',
-          color: trade.pnlPoints >= 0 ? '#059669' : '#d97706',
+          color: trade.pnlPoints >= 0 ? '#1f9d61' : '#f59e0b',
           shape: 'square',
-          text: `策略出 ${trade.pnlPoints >= 0 ? '+' : ''}${trade.pnlPoints.toFixed(0)}`,
-          size: 1.1,
+          text: `${trade.pnlPoints >= 0 ? '+' : ''}${trade.pnlPoints.toFixed(1)}`,
+          size: 1.05,
         });
       }
     });
 
     [...manualHistory, ...manualOpen].forEach((trade) => {
       if (mode === 'overview' || trade.entryTime <= currentTime) {
-        result.push({
-          time: trade.entryTime as UTCTimestamp,
+        pushMarker(trade.entryTime, {
           position: trade.side === 'LONG' ? 'belowBar' : 'aboveBar',
           color: '#7c3aed',
           shape: 'circle',
-          text: `我的${trade.side === 'LONG' ? '多' : '空'} ${trade.entryPrice}`,
-          size: 1.2,
+          text: trade.side === 'LONG' ? '我的多' : '我的空',
+          size: 1.15,
         });
       }
       if (trade.status === 'CLOSED' && trade.closeTime && (mode === 'overview' || trade.closeTime <= currentTime)) {
-        result.push({
-          time: trade.closeTime as UTCTimestamp,
+        pushMarker(trade.closeTime, {
           position: trade.side === 'LONG' ? 'aboveBar' : 'belowBar',
           color: '#7c3aed',
           shape: 'square',
-          text: `我的出 ${(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(0)}`,
+          text: `平 ${(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(0)}`,
           size: 1,
         });
       }
@@ -108,14 +106,33 @@ export const StrategyChart = () => {
     const chart = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
-      layout: { background: { type: ColorType.Solid, color: '#0b1220' }, textColor: '#94a3b8', attributionLogo: true },
-      grid: { vertLines: { color: '#162033' }, horzLines: { color: '#162033' } },
-      rightPriceScale: { borderColor: '#26344a' },
-      timeScale: { borderColor: '#26344a', timeVisible: true, secondsVisible: false, rightOffset: 8 },
-      crosshair: { vertLine: { color: '#475569' }, horzLine: { color: '#475569' } },
+      layout: {
+        background: { type: ColorType.Solid, color: '#ffffff' },
+        textColor: '#697386',
+        attributionLogo: true,
+      },
+      grid: { vertLines: { color: '#f1f3f5' }, horzLines: { color: '#f1f3f5' } },
+      rightPriceScale: { borderColor: '#e2e6ea', scaleMargins: { top: 0.1, bottom: 0.08 } },
+      timeScale: {
+        borderColor: '#e2e6ea',
+        timeVisible: true,
+        secondsVisible: false,
+        rightOffset: 8,
+        barSpacing: 7,
+        minBarSpacing: 3,
+      },
+      crosshair: { vertLine: { color: '#9aa5b1' }, horzLine: { color: '#9aa5b1' } },
+      handleScale: true,
+      handleScroll: true,
     });
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: '#22c55e', downColor: '#ef4444', wickUpColor: '#22c55e', wickDownColor: '#ef4444', borderVisible: false,
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+      borderVisible: false,
+      priceLineVisible: true,
+      lastValueVisible: true,
     });
     const markerPlugin = createSeriesMarkers(series, []);
     chartRef.current = chart;
@@ -131,18 +148,36 @@ export const StrategyChart = () => {
   }, []);
 
   useEffect(() => {
-    if (!seriesRef.current || !markerPluginRef.current) return;
-    seriesRef.current.setData(visibleQuotes.map((bar) => ({ ...bar, time: bar.time as UTCTimestamp })));
-    markerPluginRef.current.setMarkers(markers);
-    if (mode === 'replay' && visibleQuotes.length) chartRef.current?.timeScale().scrollToRealTime();
-  }, [visibleQuotes, markers, mode]);
+    if (!seriesRef.current || !quotes.length) return;
 
-  useEffect(() => {
-    if (!chartRef.current || !quotes.length) return;
-    if (!selectedTradeId) {
-      if (mode === 'overview') chartRef.current.timeScale().fitContent();
+    if (mode === 'overview') {
+      seriesRef.current.setData(quotes.map((bar) => ({ ...bar, time: bar.time as UTCTimestamp })));
+      chartRef.current?.timeScale().fitContent();
       return;
     }
+
+    const completed = quotes.slice(0, currentIndex);
+    const active = interpolateReplayBar(quotes[currentIndex], barProgress).bar;
+    seriesRef.current.setData([
+      ...completed.map((bar) => ({ ...bar, time: bar.time as UTCTimestamp })),
+      { ...active, time: active.time as UTCTimestamp },
+    ]);
+    chartRef.current?.timeScale().scrollToPosition(6, false);
+  }, [quotes, mode, currentIndex]);
+
+  useEffect(() => {
+    if (!seriesRef.current || mode !== 'replay' || !quotes[currentIndex]) return;
+    const active = interpolateReplayBar(quotes[currentIndex], barProgress).bar;
+    seriesRef.current.update({ ...active, time: active.time as UTCTimestamp });
+  }, [quotes, mode, currentIndex, barProgress]);
+
+  useEffect(() => {
+    markerPluginRef.current?.setMarkers(markers);
+  }, [markers]);
+
+  useEffect(() => {
+    if (!chartRef.current || !quotes.length || mode !== 'overview') return;
+    if (!selectedTradeId) return;
     const trade = strategyTrades.find((item) => item.tradeId === selectedTradeId);
     if (!trade) return;
     const duration = Math.max(3600, trade.exitTime - trade.entryTime);
@@ -153,5 +188,13 @@ export const StrategyChart = () => {
     });
   }, [selectedTradeId, strategyTrades, quotes, mode]);
 
-  return <div className="chart-shell"><div ref={containerRef} className="chart-container" /><div className="chart-legend"><span><i className="strategy-long" />策略進出</span><span><i className="manual" />我的模擬交易</span></div></div>;
+  return (
+    <div className="chart-shell">
+      <div ref={containerRef} className="chart-container" />
+      <div className="chart-legend">
+        <span><i className="legend-strategy" />策略交易</span>
+        <span><i className="legend-player" />我的交易</span>
+      </div>
+    </div>
+  );
 };

@@ -74,15 +74,15 @@ public/
     index.json
     <market-id>/
       meta.json
-      quotes.csv              # Demo 可用
-      2026-01.json            # 正式版可按月切片
+      quotes.csv
+      2026-01.json
       2026-02.json
 
   strategies/
     index.json
     <strategy-id>/
       meta.json
-      trades.csv              # 或 normalized trades.json
+      trades.csv
 ```
 
 重點是：**行情屬於 Market，不屬於 Strategy。**
@@ -179,58 +179,43 @@ pnl_amount, fees, slippage, net_pnl, note
 5. 正式展示行情最好與產生策略交易紀錄的行情使用相同資料來源與調整方式。
 6. Market metadata 保留 `quoteSource / session / priceAdjustment / contractMode`，避免不同資料口徑被混用。
 
-## 正式資料建議
-
-MVP 可直接使用 CSV。資料量放大後，建議在後台 Importer 完成：
-
-```text
-CSV / Excel / 回測匯出
-        ↓
-Parser
-        ↓
-Validation
-        ↓
-Normalized data
-        ↓
-按月／季切片 JSON
-        ↓
-TradeStrategyReplay
-```
-
-因此未來增加更多策略時，只需要新增 Strategy trades；同一市場行情可以直接共用。
-
 ## Cloudflare Pages 部署
 
-本 repository 的 production deployment 被固定為獨立 Cloudflare Pages project：
+建議直接使用 Cloudflare Pages 原生 GitHub integration，不需要 Wrangler 或額外 deploy workflow。
+
+Cloudflare：
+
+```text
+Workers & Pages
+→ Create application
+→ Pages
+→ Connect to Git
+```
+
+選擇：
+
+```text
+bless25min/TradeStrategyReplay
+```
+
+設定：
+
+```text
+Production branch: main
+Build command: npm run build
+Build output directory: dist
+Root directory: /
+```
+
+Project name 建議：
 
 ```text
 trade-strategy-replay
 ```
 
-預期網址：
+之後每次 push `main`，Cloudflare Pages 會自動 build 與部署。此 Pages project 與 `SoyaPlayableAd` 完全分開，不要把新 repo 綁到原本 `soyaplayablead` project 即可。
 
-```text
-https://trade-strategy-replay.pages.dev
-```
-
-部署 workflow：
-
-```text
-.github/workflows/deploy-cloudflare.yml
-```
-
-它只讀取本 repository 專用 Secrets：
-
-```text
-TRADE_STRATEGY_REPLAY_CF_API_TOKEN
-TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID
-```
-
-第一次執行會檢查 `trade-strategy-replay` project；不存在時只建立這個 project，再部署 `dist/`，最後對首頁、策略清單與市場清單進行 production smoke test。
-
-此流程沒有引用 `SoyaPlayableAd`、`soyaplayablead` 或其 LINE Login Worker，因此不會覆蓋原本專案。
-
-完整一次性設定見 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。
+完整設定見 `DEPLOYMENT.md`。
 
 ## Lightweight Charts attribution
 

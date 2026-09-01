@@ -1,7 +1,21 @@
 [
   {
+    "id": "legacy-soya-xauusd",
+    "name": "SOYA｜原專案交易紀錄",
+    "platform": "SoyaPlayableAd Legacy Demo",
+    "marketId": "legacy-xauusd-m15",
+    "dataType": "paper"
+  },
+  {
+    "id": "legacy-kent-nas100",
+    "name": "KENT｜原專案交易紀錄",
+    "platform": "SoyaPlayableAd Legacy Demo",
+    "marketId": "legacy-nas100-m15",
+    "dataType": "paper"
+  },
+  {
     "id": "demo-txf",
-    "name": "DEMO｜策略歷史重播",
+    "name": "DEMO｜合成台指期",
     "platform": "示範平台",
     "marketId": "demo-txf",
     "dataType": "backtest"

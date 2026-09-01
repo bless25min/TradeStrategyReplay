@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ImportedReplayBundle, StrategyIndexItem, StrategyMeta, StrategyTrade } from '../types';
+import type { ImportedReplayBundle, StrategyDefinition, StrategyIndexItem, StrategyMeta, StrategyTrade } from '../types';
 import { loadMarketBundle } from '../services/marketData';
 import { loadStrategyCatalog, loadStrategyMeta, loadStrategyTrades } from '../services/strategyData';
 import { findContainingBarIndex } from '../utils/barLookup';
@@ -17,6 +17,7 @@ interface StrategyState {
   initialize: () => Promise<void>;
   loadStrategy: (strategyId: string) => Promise<void>;
   setImportedBundle: (bundle: ImportedReplayBundle) => void;
+  setImportedStrategy: (strategy: StrategyDefinition) => void;
   selectTrade: (tradeId: string | null) => void;
   jumpToTrade: (direction: -1 | 1) => void;
 }
@@ -26,6 +27,14 @@ const tradingConfigFromMeta = (meta: StrategyMeta) => ({
   contractSize: meta.contractSize ?? 100,
   leverage: meta.leverage ?? 500,
 });
+
+const filterTradesToMarket = (trades: StrategyTrade[]): StrategyTrade[] => {
+  const quotes = useMarketStore.getState().quotes;
+  if (!quotes.length) return trades;
+  const first = quotes[0].time;
+  const last = quotes[quotes.length - 1].time;
+  return trades.filter((trade) => trade.entryTime >= first && trade.exitTime <= last);
+};
 
 export const useStrategyStore = create<StrategyState>((set, get) => ({
   catalog: [],
@@ -54,8 +63,9 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
     try {
       const meta = await loadStrategyMeta(strategyId);
       const market = await loadMarketBundle(meta.marketId);
-      const trades = await loadStrategyTrades(strategyId, market.meta.utcOffset);
       useMarketStore.getState().setMarket(market);
+      const loadedTrades = await loadStrategyTrades(strategyId, market.meta.utcOffset, meta);
+      const trades = filterTradesToMarket(loadedTrades);
       useTradingStore.getState().configureAndReset(tradingConfigFromMeta(meta));
       set({ selectedStrategyId: strategyId, meta, trades, selectedTradeId: null, loading: false });
     } catch (error) {
@@ -65,6 +75,18 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
 
   setImportedBundle: ({ market, strategy }) => {
     useMarketStore.getState().setMarket(market);
+    useTradingStore.getState().configureAndReset(tradingConfigFromMeta(strategy.meta));
+    set({
+      selectedStrategyId: strategy.meta.id,
+      meta: strategy.meta,
+      trades: strategy.trades,
+      selectedTradeId: null,
+      loading: false,
+      error: null,
+    });
+  },
+
+  setImportedStrategy: (strategy) => {
     useTradingStore.getState().configureAndReset(tradingConfigFromMeta(strategy.meta));
     set({
       selectedStrategyId: strategy.meta.id,

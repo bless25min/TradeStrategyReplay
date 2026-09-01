@@ -1,16 +1,55 @@
 <!doctype html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <title>TradeStrategyReplay</title>
-    <meta http-equiv="refresh" content="0; url=/classic/game.html" />
-    <script>
-      window.location.replace('/classic/game.html' + window.location.search + window.location.hash);
-    </script>
-  </head>
-  <body>
-    <a href="/classic/game.html">進入 TradeStrategyReplay</a>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f7fb" />
+  <title>TradeStrategyReplay｜選擇模式</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,"Noto Sans TC","Segoe UI",sans-serif;color:#111827;background:#f5f7fb}
+    body{min-height:100vh;display:grid;place-items:center;padding:28px}
+    .shell{width:min(960px,100%)}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+    .mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#111827;color:#fff;font-weight:900}
+    .brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:#64748b;font-size:12px}
+    .heading{margin-bottom:22px}.heading h2{font-size:32px;letter-spacing:-.035em;margin:0 0 8px}.heading p{margin:0;color:#64748b;line-height:1.6}
+    .modes{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .mode{position:relative;display:flex;min-height:275px;flex-direction:column;text-decoration:none;color:inherit;border:1px solid #dbe2ea;border-radius:18px;background:#fff;padding:24px;box-shadow:0 10px 32px rgba(15,23,42,.06);transition:.18s ease}
+    .mode:hover{transform:translateY(-3px);border-color:#94a3b8;box-shadow:0 16px 40px rgba(15,23,42,.1)}
+    .mode.recommended{border-color:#93c5fd}.badge{align-self:flex-start;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;background:#eff6ff;color:#2563eb;margin-bottom:18px}
+    .icon{font-size:30px;margin-bottom:16px}.mode h3{font-size:24px;margin:0 0 9px}.mode p{margin:0;color:#64748b;line-height:1.65;font-size:14px}
+    .features{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}.features span{font-size:10px;padding:5px 8px;border-radius:6px;background:#f1f5f9;color:#475569}
+    .go{margin-top:auto;padding-top:24px;font-size:13px;font-weight:800;color:#111827}.recommended .go{color:#2563eb}
+    .foot{margin-top:18px;color:#94a3b8;font-size:10px;text-align:center}
+    @media(max-width:700px){body{padding:18px}.modes{grid-template-columns:1fr}.heading h2{font-size:27px}.mode{min-height:235px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand"><div class="mark">TS</div><div><h1>TradeStrategyReplay</h1><p>Historical Strategy × Market Replay</p></div></div>
+    <section class="heading"><h2>選擇體驗模式</h2><p>兩個模式使用相同的歷史行情與交易核心，只改變展示與互動方式。</p></section>
+    <section class="modes">
+      <a class="mode recommended" data-target="/performance/" href="/performance/">
+        <span class="badge">建議｜策略展示</span><div class="icon">📈</div><h3>績效競速</h3>
+        <p>拿掉遊戲角色與戰鬥元素，直接比較「你的模擬績效」與「策略同期績效」，適合券商講座、客戶展示與策略驗證。</p>
+        <div class="features"><span>你 vs 策略</span><span>同期報酬率</span><span>歷史重播</span><span>可自行下單</span></div><div class="go">進入績效模式 →</div>
+      </a>
+      <a class="mode" data-target="/classic/game.html" href="/classic/game.html">
+        <div class="icon">🎮</div><h3>遊戲模式</h3>
+        <p>保留原 SoyaPlayableAd 的遊戲化介面、操作節奏與交易模擬體驗，適合教學、課程與互動展示。</p>
+        <div class="features"><span>原版介面</span><span>交易挑戰</span><span>遊戲化回饋</span><span>歷史行情</span></div><div class="go">進入遊戲模式 →</div>
+      </a>
+    </section>
+    <div class="foot">歷史資料與模擬交易僅供策略驗證與展示，不構成即時交易訊號。</div>
+  </main>
+  <script>
+    document.querySelectorAll('[data-target]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const target = link.dataset.target;
+        location.href = target + location.search + location.hash;
+      });
+    });
+  </script>
+</body>
 </html>

@@ -7,6 +7,10 @@
   "startDate": "2026-06-01T08:45:00+08:00",
   "endDate": "2026-06-02T04:30:00+08:00",
   "tradeSource": "Synthetic demo trades",
+  "tradeFormat": "csv",
+  "tradeFiles": [
+    "trades.csv"
+  ],
   "disclaimer": "此資料為介面驗證用合成資料，不代表任何真實策略或績效。",
   "initialBalance": 1000000,
   "contractSize": 200,

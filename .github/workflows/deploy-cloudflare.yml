@@ -1,0 +1,45 @@
+name: Deploy TradeStrategyReplay to Cloudflare Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trade-strategy-replay-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: trade-strategy-replay-production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify dedicated Cloudflare credentials
+        env:
+          CF_API_TOKEN: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID }}
+        run: |
+          test -n "$CF_API_TOKEN" || (echo "Missing TRADE_STRATEGY_REPLAY_CF_API_TOKEN" && exit 1)
+          test -n "$CF_ACCOUNT_ID" || (echo "Missing TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID" && exit 1)
+
+      - name: Deploy isolated Pages project
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_API_TOKEN }}
+          accountId: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=trade-strategy-replay --branch=main

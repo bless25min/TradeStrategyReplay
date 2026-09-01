@@ -24,10 +24,7 @@ const wanted = (sourcePath) => {
 
 const fetchOrThrow = async (url) => {
   const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'TradeStrategyReplay-build',
-      Accept: '*/*',
-    },
+    headers: { 'User-Agent': 'TradeStrategyReplay-build', Accept: '*/*' },
   });
   if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
   return response;
@@ -51,8 +48,6 @@ const patchClassicGameHtml = (html) => {
 
 const patchPerformanceGameHtml = (html) => {
   let output = commonPatch(html, 'TradeStrategyReplay｜策略績效競速');
-  // RPG scripts are not loaded in the performance variant. The original chart,
-  // trading, replay, zoom, drag and position UI remain untouched.
   output = output.replace(/\s*<script src="js\/rpg\.js"><\/script>/i, '');
   output = output.replace(/\s*<script src="js\/rpg_ui\.js"><\/script>/i, '');
   output = output.replace('</head>', `<style>
@@ -72,9 +67,17 @@ const patchDataJs = (source) => source.replace(
   'const dataPath = `/legacy-source/${instrument}_M5.csv`;',
 );
 
-const patchPerformanceMainJs = (source) => source
+const patchMainGhostPaths = (source) => source
+  .replace("{ url: 'SoyaRecord.json', label: 'Soya', defaultSymbol: 'XAUUSD' }", "{ url: '/legacy-source/SoyaRecord.json', label: 'Soya', defaultSymbol: 'XAUUSD' }")
+  .replace("{ url: 'KentRecord.json', label: 'Kent', defaultSymbol: 'NAS100' }", "{ url: '/legacy-source/KentRecord.json', label: 'Kent', defaultSymbol: 'NAS100' }");
+
+const patchPerformanceMainJs = (source) => patchMainGhostPaths(source)
   .replace('let startFunds = 5000;', 'let startFunds = 10000;')
-  .replace("if (localStorage.getItem('invite_bonus')) startFunds += 5000;", '// Performance variant uses a fixed comparison baseline.');
+  .replace("if (localStorage.getItem('invite_bonus')) startFunds += 5000;", '// Performance variant uses a fixed comparison baseline.')
+  .replace(
+    'if (rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {',
+    "if (typeof rpgState !== 'undefined' && rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {",
+  );
 
 const main = async () => {
   for (const root of outputRoots) {
@@ -102,15 +105,16 @@ const main = async () => {
   const performanceGamePath = path.join(performanceRoot, 'game.html');
   const classicDataPath = path.join(classicRoot, 'js/data.js');
   const performanceDataPath = path.join(performanceRoot, 'js/data.js');
+  const classicMainPath = path.join(classicRoot, 'js/main.js');
   const performanceMainPath = path.join(performanceRoot, 'js/main.js');
 
   await writeFile(classicGamePath, patchClassicGameHtml(await readFile(classicGamePath, 'utf8')), 'utf8');
   await writeFile(performanceGamePath, patchPerformanceGameHtml(await readFile(performanceGamePath, 'utf8')), 'utf8');
-  // /performance/ should open directly without requiring /game.html.
   await writeFile(path.join(performanceRoot, 'index.html'), await readFile(performanceGamePath), 'utf8');
 
   await writeFile(classicDataPath, patchDataJs(await readFile(classicDataPath, 'utf8')), 'utf8');
   await writeFile(performanceDataPath, patchDataJs(await readFile(performanceDataPath, 'utf8')), 'utf8');
+  await writeFile(classicMainPath, patchMainGhostPaths(await readFile(classicMainPath, 'utf8')), 'utf8');
   await writeFile(performanceMainPath, patchPerformanceMainJs(await readFile(performanceMainPath, 'utf8')), 'utf8');
 
   const strategyAdapter = await readFile(path.resolve(process.cwd(), 'classic/strategy-adapter.js'));

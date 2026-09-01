@@ -1,0 +1,16 @@
+{
+  "id": "legacy-nas100-m15",
+  "instrument": "NASDAQ 100",
+  "symbol": "NAS100",
+  "timeframe": "15分鐘",
+  "timezone": "UTC",
+  "utcOffset": "+00:00",
+  "quoteSource": "SoyaPlayableAd / NAS100_M15.csv",
+  "session": "Legacy source session",
+  "priceAdjustment": "none",
+  "contractMode": "continuous",
+  "quoteFormat": "csv",
+  "quoteFiles": [
+    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/NAS100_M15.csv"
+  ]
+}

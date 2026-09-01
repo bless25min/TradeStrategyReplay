@@ -9,7 +9,10 @@ import {
   type SeriesMarker,
   type UTCTimestamp,
 } from 'lightweight-charts';
+import { useMarketStore } from '../../store/useMarketStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
+import { useTradingStore } from '../../store/useTradingStore';
+import { findContainingBar } from '../../utils/barLookup';
 
 interface MarkerPluginRef {
   setMarkers: (markers: SeriesMarker<UTCTimestamp>[]) => void;
@@ -21,13 +24,13 @@ export const StrategyChart = () => {
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const markerPluginRef = useRef<MarkerPluginRef | null>(null);
 
-  const quotes = useStrategyStore((state) => state.quotes);
+  const quotes = useMarketStore((state) => state.quotes);
+  const mode = useMarketStore((state) => state.mode);
+  const currentIndex = useMarketStore((state) => state.currentIndex);
   const strategyTrades = useStrategyStore((state) => state.trades);
-  const manualOpen = useStrategyStore((state) => state.openManualPositions);
-  const manualHistory = useStrategyStore((state) => state.manualTradeHistory);
-  const mode = useStrategyStore((state) => state.mode);
-  const currentIndex = useStrategyStore((state) => state.currentIndex);
   const selectedTradeId = useStrategyStore((state) => state.selectedTradeId);
+  const manualOpen = useTradingStore((state) => state.openPositions);
+  const manualHistory = useTradingStore((state) => state.history);
 
   const visibleQuotes = useMemo(
     () => mode === 'overview' ? quotes : quotes.slice(0, currentIndex + 1),
@@ -37,14 +40,17 @@ export const StrategyChart = () => {
 
   const markers = useMemo(() => {
     const result: SeriesMarker<UTCTimestamp>[] = [];
-    const strategyVisible = mode === 'overview'
-      ? strategyTrades
-      : strategyTrades.filter((trade) => trade.entryTime <= currentTime);
+    const pushStrategyMarker = (
+      time: number,
+      marker: Omit<SeriesMarker<UTCTimestamp>, 'time'>,
+    ) => {
+      const bar = findContainingBar(quotes, time);
+      if (bar) result.push({ ...marker, time: bar.time as UTCTimestamp });
+    };
 
-    strategyVisible.forEach((trade) => {
-      if (trade.entryTime <= currentTime || mode === 'overview') {
-        result.push({
-          time: trade.entryTime as UTCTimestamp,
+    strategyTrades.forEach((trade) => {
+      if (mode === 'overview' || trade.entryTime <= currentTime) {
+        pushStrategyMarker(trade.entryTime, {
           position: trade.side === 'LONG' ? 'belowBar' : 'aboveBar',
           color: trade.side === 'LONG' ? '#2563eb' : '#e11d48',
           shape: trade.side === 'LONG' ? 'arrowUp' : 'arrowDown',
@@ -52,9 +58,8 @@ export const StrategyChart = () => {
           size: 1.4,
         });
       }
-      if (trade.exitTime <= currentTime || mode === 'overview') {
-        result.push({
-          time: trade.exitTime as UTCTimestamp,
+      if (mode === 'overview' || trade.exitTime <= currentTime) {
+        pushStrategyMarker(trade.exitTime, {
           position: trade.side === 'LONG' ? 'aboveBar' : 'belowBar',
           color: trade.pnlPoints >= 0 ? '#059669' : '#d97706',
           shape: 'square',
@@ -65,7 +70,7 @@ export const StrategyChart = () => {
     });
 
     [...manualHistory, ...manualOpen].forEach((trade) => {
-      if (trade.entryTime <= currentTime || mode === 'overview') {
+      if (mode === 'overview' || trade.entryTime <= currentTime) {
         result.push({
           time: trade.entryTime as UTCTimestamp,
           position: trade.side === 'LONG' ? 'belowBar' : 'aboveBar',
@@ -75,7 +80,7 @@ export const StrategyChart = () => {
           size: 1.2,
         });
       }
-      if (trade.status === 'CLOSED' && trade.closeTime && (trade.closeTime <= currentTime || mode === 'overview')) {
+      if (trade.status === 'CLOSED' && trade.closeTime && (mode === 'overview' || trade.closeTime <= currentTime)) {
         result.push({
           time: trade.closeTime as UTCTimestamp,
           position: trade.side === 'LONG' ? 'aboveBar' : 'belowBar',
@@ -88,7 +93,7 @@ export const StrategyChart = () => {
     });
 
     return result.sort((a, b) => Number(a.time) - Number(b.time));
-  }, [strategyTrades, manualHistory, manualOpen, currentTime, mode]);
+  }, [quotes, strategyTrades, manualHistory, manualOpen, currentTime, mode]);
 
   useEffect(() => {
     if (!containerRef.current) return;

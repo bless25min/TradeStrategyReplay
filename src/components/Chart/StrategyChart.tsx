@@ -18,6 +18,15 @@ interface MarkerPluginRef {
   setMarkers: (markers: SeriesMarker<UTCTimestamp>[]) => void;
 }
 
+interface BarMarkerInput {
+  position: 'aboveBar' | 'belowBar' | 'inBar';
+  color: string;
+  shape: 'circle' | 'square' | 'arrowUp' | 'arrowDown';
+  text?: string;
+  size?: number;
+  id?: string;
+}
+
 export const StrategyChart = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -40,12 +49,11 @@ export const StrategyChart = () => {
 
   const markers = useMemo(() => {
     const result: SeriesMarker<UTCTimestamp>[] = [];
-    const pushStrategyMarker = (
-      time: number,
-      marker: Omit<SeriesMarker<UTCTimestamp>, 'time'>,
-    ) => {
+    const pushStrategyMarker = (time: number, marker: BarMarkerInput) => {
       const bar = findContainingBar(quotes, time);
-      if (bar) result.push({ ...marker, time: bar.time as UTCTimestamp });
+      if (bar) {
+        result.push({ ...marker, time: bar.time as UTCTimestamp } as SeriesMarker<UTCTimestamp>);
+      }
     };
 
     strategyTrades.forEach((trade) => {

@@ -1,0 +1,16 @@
+{
+  "id": "legacy-xauusd-m15",
+  "instrument": "黃金 XAUUSD",
+  "symbol": "XAUUSD",
+  "timeframe": "15分鐘",
+  "timezone": "UTC",
+  "utcOffset": "+00:00",
+  "quoteSource": "SoyaPlayableAd / XAUUSD_M15.csv",
+  "session": "Legacy source session",
+  "priceAdjustment": "none",
+  "contractMode": "continuous",
+  "quoteFormat": "csv",
+  "quoteFiles": [
+    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/XAUUSD_M15.csv"
+  ]
+}

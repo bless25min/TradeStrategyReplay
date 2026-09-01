@@ -11,6 +11,6 @@
   "contractMode": "actual",
   "quoteFormat": "csv",
   "quoteFiles": [
-    "/strategies/demo-txf/quotes.csv"
+    "quotes.csv"
   ]
 }

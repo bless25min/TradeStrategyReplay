@@ -16,8 +16,10 @@ const optionalNumber = (value: string | undefined): number | undefined => {
 export const parseQuotesCsv = (text: string, utcOffset = '+08:00'): BarData[] => {
   const rows = parseCsv(text);
   const bars = rows.map((row, index) => {
-    const timeRaw = row.time || row.datetime || row.timestamp;
-    if (!timeRaw) throw new Error(`歷史報價第 ${index + 2} 列缺少 time`);
+    const timeRaw = row.date && row.time
+      ? `${row.date} ${row.time}`
+      : row.datetime || row.timestamp || row.time;
+    if (!timeRaw) throw new Error(`歷史報價第 ${index + 2} 列缺少 time / date`);
 
     const bar: BarData = {
       time: parseTimestamp(timeRaw, utcOffset),
@@ -25,7 +27,7 @@ export const parseQuotesCsv = (text: string, utcOffset = '+08:00'): BarData[] =>
       high: numberValue(row.high, Number.NaN),
       low: numberValue(row.low, Number.NaN),
       close: numberValue(row.close, Number.NaN),
-      volume: optionalNumber(row.volume),
+      volume: optionalNumber(row.volume || row.vol || row.tickvol),
       contract: row.contract || undefined,
     };
 
@@ -51,25 +53,25 @@ export const parseTradesCsv = (text: string, utcOffset = '+08:00'): StrategyTrad
   const rows = parseCsv(text);
   return rows
     .map((row, index) => {
-      const tradeId = row.trade_id || row.tradeid || String(index + 1);
-      const entryTimeRaw = row.entry_time || row.entrytime;
-      const exitTimeRaw = row.exit_time || row.exittime;
+      const tradeId = row.trade_id || row.tradeid || row.id || String(index + 1);
+      const entryTimeRaw = row.entry_time || row.entrytime || row.open_time || row.opentime;
+      const exitTimeRaw = row.exit_time || row.exittime || row.close_time || row.closetime;
       if (!entryTimeRaw || !exitTimeRaw) throw new Error(`交易 ${tradeId} 缺少進出場時間`);
 
       const trade: StrategyTrade = {
         tradeId,
-        side: normalizeSide(row.side || row.type || ''),
+        side: normalizeSide(row.side || row.type || row.direction || ''),
         entryTime: parseTimestamp(entryTimeRaw, utcOffset),
-        entryPrice: numberValue(row.entry_price || row.entryprice, Number.NaN),
+        entryPrice: numberValue(row.entry_price || row.entryprice || row.open_price || row.openprice, Number.NaN),
         exitTime: parseTimestamp(exitTimeRaw, utcOffset),
-        exitPrice: numberValue(row.exit_price || row.exitprice, Number.NaN),
-        quantity: numberValue(row.qty || row.quantity || row.volume, 1),
+        exitPrice: numberValue(row.exit_price || row.exitprice || row.close_price || row.closeprice, Number.NaN),
+        quantity: numberValue(row.qty || row.quantity || row.volume || row.lots, 1),
         pnlPoints: numberValue(row.pnl_points || row.pnlpoints, Number.NaN),
-        pnlAmount: optionalNumber(row.pnl_amount || row.pnlamount),
+        pnlAmount: optionalNumber(row.pnl_amount || row.pnlamount || row.profit),
         fees: optionalNumber(row.fees),
         slippage: optionalNumber(row.slippage),
         netPnl: optionalNumber(row.net_pnl || row.netpnl),
-        contract: row.contract || undefined,
+        contract: row.contract || row.symbol || undefined,
         note: row.note || undefined,
       };
 

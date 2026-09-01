@@ -199,6 +199,39 @@ TradeStrategyReplay
 
 因此未來增加更多策略時，只需要新增 Strategy trades；同一市場行情可以直接共用。
 
+## Cloudflare Pages 部署
+
+本 repository 的 production deployment 被固定為獨立 Cloudflare Pages project：
+
+```text
+trade-strategy-replay
+```
+
+預期網址：
+
+```text
+https://trade-strategy-replay.pages.dev
+```
+
+部署 workflow：
+
+```text
+.github/workflows/deploy-cloudflare.yml
+```
+
+它只讀取本 repository 專用 Secrets：
+
+```text
+TRADE_STRATEGY_REPLAY_CF_API_TOKEN
+TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID
+```
+
+第一次執行會檢查 `trade-strategy-replay` project；不存在時只建立這個 project，再部署 `dist/`，最後對首頁、策略清單與市場清單進行 production smoke test。
+
+此流程沒有引用 `SoyaPlayableAd`、`soyaplayablead` 或其 LINE Login Worker，因此不會覆蓋原本專案。
+
+完整一次性設定見 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。
+
 ## Lightweight Charts attribution
 
 本專案使用 TradingView Lightweight Charts™。公開部署時請保留畫面中的 TradingView attribution，並遵循該套件授權要求。

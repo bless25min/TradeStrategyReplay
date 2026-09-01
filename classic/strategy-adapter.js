@@ -142,7 +142,10 @@
     const instrument = state.selectedInstrument;
     const filtered = actions.filter((action) => Number.isFinite(action.time) && Number.isFinite(action.price) && action.qty > 0);
     if (!filtered.length) throw new Error('沒有可用策略交易紀錄。');
-    state.ghostData = [{ instrument, session: 'browser-import', label, equity: 0, profit: 0, actions: filtered }];
+    const imported = [{ instrument, session: 'browser-import', label, equity: 0, profit: 0, actions: filtered }];
+    state.ghostData = imported;
+    state.ghostFull = imported;
+    state.__ghostWindowed = imported;
     window.__tradeStrategyReplayImportedStrategy = true;
     if (typeof window.rebuildGhostActionIndex === 'function') window.rebuildGhostActionIndex();
     if (typeof window.draw === 'function') window.draw();

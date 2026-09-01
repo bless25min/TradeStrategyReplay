@@ -1,0 +1,16 @@
+{
+  "id": "demo-txf",
+  "instrument": "台指期",
+  "symbol": "TXF",
+  "timeframe": "15分鐘",
+  "timezone": "Asia/Taipei",
+  "utcOffset": "+08:00",
+  "quoteSource": "Synthetic demo market data",
+  "session": "Demo continuous session",
+  "priceAdjustment": "none",
+  "contractMode": "actual",
+  "quoteFormat": "csv",
+  "quoteFiles": [
+    "/strategies/demo-txf/quotes.csv"
+  ]
+}

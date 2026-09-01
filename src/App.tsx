@@ -41,7 +41,7 @@ function App() {
           {isImported && strategyMeta && <option value={strategyMeta.id}>{strategyMeta.name}（本機匯入）</option>}
           {catalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
-        <button className="import-button" onClick={() => setImportOpen(true)}><Upload size={16} />匯入策略資料</button>
+        <button className="import-button" onClick={() => setImportOpen(true)}><Upload size={16} />匯入行情 / 交易</button>
       </div>
     </nav>
 

@@ -12,6 +12,7 @@ concurrency:
 
 env:
   CLOUDFLARE_PROJECT_NAME: trade-strategy-replay
+  PRODUCTION_URL: https://trade-strategy-replay.pages.dev
 
 jobs:
   deploy:
@@ -70,3 +71,10 @@ jobs:
           apiToken: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_API_TOKEN }}
           accountId: ${{ secrets.TRADE_STRATEGY_REPLAY_CF_ACCOUNT_ID }}
           command: pages deploy dist --project-name=trade-strategy-replay --branch=main
+
+      - name: Production smoke test
+        run: |
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors "$PRODUCTION_URL/" > /dev/null
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors "$PRODUCTION_URL/strategies/index.json" > /dev/null
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors "$PRODUCTION_URL/markets/index.json" > /dev/null
+          echo "TradeStrategyReplay production smoke test passed: $PRODUCTION_URL"

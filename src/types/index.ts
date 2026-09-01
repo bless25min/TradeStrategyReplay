@@ -13,6 +13,7 @@ export type StrategyDataType = 'backtest' | 'paper' | 'live';
 export type ReplayMode = 'overview' | 'replay';
 export type ContractMode = 'actual' | 'continuous';
 export type QuoteFormat = 'csv' | 'json';
+export type StrategyTradeFormat = 'csv' | 'json' | 'legacy-actions';
 
 export interface MarketMeta {
   id: string;
@@ -58,6 +59,16 @@ export interface StrategyTrade {
   note?: string;
 }
 
+export interface LegacyTradeAction {
+  time: string | number;
+  type: string;
+  price: number;
+  qty?: number;
+  volume?: number;
+  profit?: number | null;
+  symbol?: string;
+}
+
 export interface ManualTrade {
   id: number;
   side: TradeSide;
@@ -86,6 +97,9 @@ export interface StrategyMeta {
   startDate?: string;
   endDate?: string;
   tradeSource?: string;
+  tradeFormat?: StrategyTradeFormat;
+  tradeFiles?: string[];
+  legacySymbol?: string;
   disclaimer?: string;
   initialBalance?: number;
   contractSize?: number;

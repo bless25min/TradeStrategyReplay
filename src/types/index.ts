@@ -29,6 +29,19 @@ export interface StrategyTrade {
   note?: string;
 }
 
+export interface ManualTrade {
+  id: number;
+  side: TradeSide;
+  entryTime: number;
+  entryPrice: number;
+  quantity: number;
+  closeTime?: number;
+  closePrice?: number;
+  pnl?: number;
+  status: 'OPEN' | 'CLOSED';
+  reason?: 'manual' | 'end_replay' | 'reset';
+}
+
 export interface StrategyMeta {
   id: string;
   name: string;
@@ -43,6 +56,9 @@ export interface StrategyMeta {
   endDate?: string;
   dataSource?: string;
   disclaimer?: string;
+  initialBalance?: number;
+  contractSize?: number;
+  leverage?: number;
 }
 
 export interface StrategyIndexItem {

@@ -11,6 +11,6 @@
   "contractMode": "continuous",
   "quoteFormat": "csv",
   "quoteFiles": [
-    "https://raw.githubusercontent.com/bless25min/SoyaPlayableAd/main/public/NAS100_M15.csv"
+    "/legacy-source/NAS100_M15.csv"
   ]
 }

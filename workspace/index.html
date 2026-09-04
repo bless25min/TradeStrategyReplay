@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f3f5f8" />
+  <title>TradeStrategyReplay｜績效工作台</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,"Noto Sans TC","Segoe UI",sans-serif;color:#172033;background:#f3f5f8}button,input,select{font:inherit}
+    body{overflow:hidden}.app{height:100vh;display:grid;grid-template-rows:auto auto 1fr auto;min-height:0}
+    .topbar{height:54px;padding:0 14px;display:flex;align-items:center;gap:14px;background:#fff;border-bottom:1px solid #dde3ea}.brand{display:flex;align-items:center;gap:9px;min-width:210px}.brand-mark{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#111827;color:#fff;font-weight:900;font-size:11px}.brand strong{font-size:14px}.brand small{display:block;color:#8a96a8;font-size:9px;margin-top:1px}.top-actions{margin-left:auto;display:flex;gap:7px;align-items:center}.btn{height:32px;border:1px solid #cfd7e3;border-radius:7px;background:#fff;color:#334155;padding:0 10px;font-size:11px;font-weight:700;cursor:pointer}.btn:hover{background:#f8fafc}.btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}.btn.icon{width:32px;padding:0}.btn.active{background:#172033;color:#fff;border-color:#172033}.btn:disabled{opacity:.45;cursor:default}
+    .sessionbar{min-height:58px;padding:9px 14px;display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid #dde3ea;flex-wrap:wrap}.session-group{display:flex;align-items:center;gap:6px}.session-label{font-size:9px;color:#8793a4;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.date-input{height:32px;border:1px solid #cfd7e3;border-radius:7px;padding:0 8px;color:#334155;background:#fff;font-size:11px}.clock{min-width:132px;font-variant-numeric:tabular-nums;font-size:12px;font-weight:800;color:#0f172a}.play{width:34px;height:34px;border-radius:50%;border:0;background:#172033;color:#fff;cursor:pointer}.speed{display:flex;border:1px solid #d6dde7;border-radius:7px;overflow:hidden}.speed button{height:30px;padding:0 8px;border:0;border-right:1px solid #d6dde7;background:#fff;font-size:10px;cursor:pointer}.speed button:last-child{border-right:0}.speed button.active{background:#e8eef7;color:#172033;font-weight:900}
+    .workspace{min-height:0;display:grid;grid-template-columns:1fr 245px;gap:10px;padding:10px}.charts-pane{min-width:0;min-height:0;display:flex;flex-direction:column;gap:8px}.charts-toolbar{height:34px;display:flex;align-items:center;gap:7px}.toolbar-title{font-size:11px;font-weight:800;color:#475569;margin-right:auto}.layout-switch{display:flex;gap:4px}.chart-grid{flex:1;min-height:0;display:grid;gap:8px}.chart-grid.layout-1{grid-template-columns:1fr;grid-template-rows:1fr}.chart-grid.layout-2{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr}.chart-grid.layout-4{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+    .chart-card{min-width:0;min-height:0;border:1px solid #d7dee8;border-radius:10px;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(15,23,42,.04)}.chart-card.hidden-card{display:none}.chart-head{height:42px;display:flex;align-items:center;gap:6px;padding:5px 7px;border-bottom:1px solid #e3e8ef;background:#fbfcfe}.chart-head select{height:30px;border:1px solid #d7dee8;border-radius:6px;background:#fff;color:#334155;padding:0 6px;font-size:10px;font-weight:700}.chart-symbol{width:84px}.chart-tf{width:62px}.chart-strategy{min-width:120px;flex:1}.status-dot{width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex:0 0 auto}.status-dot.ready{background:#22c55e}.status-dot.loading{background:#f59e0b}.frame-wrap{position:relative;flex:1;min-height:0;background:#fff}.frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}.frame-loading{position:absolute;inset:0;display:grid;place-items:center;background:#fff;color:#94a3b8;font-size:10px;z-index:2}.frame-wrap.ready .frame-loading{display:none}
+    .side{min-height:0;display:flex;flex-direction:column;gap:8px}.panel{background:#fff;border:1px solid #d7dee8;border-radius:10px;padding:11px;box-shadow:0 2px 8px rgba(15,23,42,.04)}.panel h3{margin:0 0 9px;font-size:11px}.panel-sub{font-size:9px;color:#8a96a8;margin-top:-5px;margin-bottom:9px;line-height:1.5}.perf-list{display:flex;flex-direction:column;gap:7px}.perf-row{border:1px solid #e2e8f0;border-radius:8px;padding:8px}.perf-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.perf-name{font-size:10px;font-weight:800}.perf-pct{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums}.perf-pct.pos{color:#15803d}.perf-pct.neg{color:#b91c1c}.perf-symbols{font-size:8px;color:#94a3b8;margin-top:4px}.empty{padding:14px 4px;text-align:center;color:#94a3b8;font-size:9px;line-height:1.6}.hint{font-size:9px;color:#64748b;line-height:1.6}.strategy-library{max-height:155px;overflow:auto;display:flex;flex-direction:column;gap:5px}.strategy-item{padding:7px;border:1px solid #e2e8f0;border-radius:7px}.strategy-item strong{font-size:9px}.strategy-item small{display:block;font-size:8px;color:#94a3b8;margin-top:2px}
+    .footer{height:24px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #dde3ea;background:#fff;color:#94a3b8;font-size:8px}.modal{position:fixed;inset:0;background:rgba(15,23,42,.38);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}.modal.open{display:flex}.modal-card{width:min(500px,100%);background:#fff;border-radius:12px;padding:16px;box-shadow:0 18px 55px rgba(15,23,42,.22)}.modal-head{display:flex;justify-content:space-between;align-items:start}.modal-head h3{margin:0;font-size:15px}.modal-head p{margin:4px 0 0;color:#94a3b8;font-size:9px}.modal-body{margin-top:14px;display:grid;gap:9px}.field{display:flex;flex-direction:column;gap:4px;font-size:9px;color:#64748b;font-weight:700}.field input,.field select{height:34px;border:1px solid #d7dee8;border-radius:7px;padding:0 8px}.filebox{padding:12px;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:13px}.import-status{font-size:9px;min-height:15px;color:#b91c1c}
+    @media(max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;display:block}.topbar{position:sticky;top:0;z-index:10}.brand small{display:none}.sessionbar{position:sticky;top:54px;z-index:9}.workspace{display:block}.side{margin-top:10px}.chart-grid.layout-2,.chart-grid.layout-4{grid-template-columns:1fr;grid-template-rows:none}.chart-card{height:420px;margin-bottom:8px}.footer{display:none}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">TS</div><div><strong>TradeStrategyReplay</strong><small>Multi-Chart Performance Workspace</small></div></div>
+    <div class="top-actions"><a class="btn" href="/">模式選擇</a><button class="btn primary" id="importStrategyBtn">匯入策略</button></div>
+  </header>
+  <section class="sessionbar">
+    <div class="session-group"><span class="session-label">區間</span><input class="date-input" id="startDate" type="date" value="2025-01-02"><span>→</span><input class="date-input" id="endDate" type="date" value="2025-01-31"><button class="btn" id="randomRangeBtn">隨機30天</button><button class="btn primary" id="applyRangeBtn">套用區間</button></div>
+    <div class="session-group"><button class="play" id="playBtn" title="播放/暫停">▶</button><button class="btn icon" id="stepBtn" title="前進5分鐘">›</button><div class="speed" id="speedGroup"><button class="active" data-speed="1">1x</button><button data-speed="5">5x</button><button data-speed="20">20x</button><button data-speed="40">40x</button></div></div>
+    <div class="clock" id="currentClock">2025/01/02 00:00</div>
+  </section>
+  <main class="workspace">
+    <section class="charts-pane">
+      <div class="charts-toolbar"><div class="toolbar-title">圖表工作區</div><button class="btn" id="addChartBtn">＋ 圖表</button><div class="layout-switch"><button class="btn" data-layout="1">1格</button><button class="btn active" data-layout="2">2格</button><button class="btn" data-layout="4">4格</button></div></div>
+      <div class="chart-grid layout-2" id="chartGrid"></div>
+    </section>
+    <aside class="side">
+      <section class="panel"><h3>策略績效</h3><div class="panel-sub">同策略＋同商品只計算一次；不同週期只是不同觀察視窗。</div><div class="perf-list" id="performanceList"></div></section>
+      <section class="panel"><h3>策略庫</h3><div class="strategy-library" id="strategyLibrary"></div></section>
+      <section class="panel"><h3>工作台規則</h3><div class="hint">每張圖可獨立選商品、週期與策略。多商品策略掛在 XAUUSD 圖只顯示 XAUUSD 交易；同一策略再掛到 NAS100 圖，就會顯示 NAS100 交易。所有圖表共用同一個 Replay 時鐘。</div></section>
+    </aside>
+  </main>
+  <footer class="footer"><span>歷史資料與模擬僅供策略驗證，不構成交易建議。</span><span id="sessionStatus">2 Charts · Shared Clock</span></footer>
+</div>
+<div class="modal" id="importModal">
+  <div class="modal-card">
+    <div class="modal-head"><div><h3>匯入策略</h3><p>支援多商品 action JSON、completed trades JSON / CSV。</p></div><button class="btn icon" id="closeImportBtn">×</button></div>
+    <div class="modal-body">
+      <label class="field">策略名稱<input id="strategyName" value="Imported Strategy"></label>
+      <label class="field">無 symbol 欄位時預設商品<select id="defaultSymbol"><option>XAUUSD</option><option>NAS100</option><option>BTCUSD</option></select></label>
+      <label class="field filebox">交易紀錄檔<input id="strategyFile" type="file" accept=".json,.csv,.tsv,text/csv,application/json"></label>
+      <div class="import-status" id="importStatus"></div>
+    </div>
+    <div class="modal-actions"><button class="btn" id="cancelImportBtn">取消</button><button class="btn primary" id="confirmImportBtn">加入策略庫</button></div>
+  </div>
+</div>
+<script src="workspace.js"></script>
+</body>
+</html>

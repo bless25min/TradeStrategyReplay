@@ -135,7 +135,8 @@ const patchPerformanceMainJs = (source) => {
   }`,
   );
 
-  // Workspace parent owns the clock; child chart engine must start paused.
+  // Workspace frames still use the original gameLoop, but start paused so the parent can
+  // issue a synchronized Play command to all original chart engines.
   output = output.replace(
     'state.isPlaying = true;',
     "state.isPlaying = new URLSearchParams(window.location.search).get('workspace') !== '1';",
@@ -186,9 +187,10 @@ const main = async () => {
   await writeFile(path.join(performanceRoot, 'performance-adapter.js'), await readFile(path.resolve(process.cwd(), 'performance/performance-adapter.js')));
   await writeFile(path.join(performanceRoot, 'frame-adapter.js'), await readFile(path.resolve(process.cwd(), 'workspace/frame-adapter.js')));
 
-  // /performance/ is now the MT5-style multi-chart workspace; game.html remains the single-chart engine used by each frame.
+  // /performance/ is the multi-chart research shell. Each frame remains the original
+  // SoyaPlayableAd chart/replay engine; the shell only synchronizes native controls.
   await writeFile(path.join(performanceRoot, 'index.html'), await readFile(path.resolve(process.cwd(), 'workspace/index.html')));
-  await writeFile(path.join(performanceRoot, 'workspace.js'), await readFile(path.resolve(process.cwd(), 'workspace/workspace.js')));
+  await writeFile(path.join(performanceRoot, 'workspace.js'), await readFile(path.resolve(process.cwd(), 'workspace/workspace-v2.js')));
 
   console.log(`Synced ${files.length} original SoyaPlayableAd UI assets into public/classic and the /performance multi-chart workspace.`);
 };

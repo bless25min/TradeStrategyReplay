@@ -22,12 +22,26 @@ const wanted = (sourcePath) => {
   return false;
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const fetchOrThrow = async (url) => {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'TradeStrategyReplay-build', Accept: '*/*' },
-  });
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
-  return response;
+  let lastError = null;
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'TradeStrategyReplay-build', Accept: '*/*' },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (response.ok) return response;
+      lastError = new Error(`Failed to fetch ${url}: ${response.status}`);
+      // Retry GitHub throttling / transient upstream failures, not permanent 404s.
+      if (![408, 429, 500, 502, 503, 504].includes(response.status)) throw lastError;
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < 4) await sleep(350 * (2 ** (attempt - 1)));
+  }
+  throw lastError || new Error(`Failed to fetch ${url}`);
 };
 
 const commonPatch = (html, title) => {

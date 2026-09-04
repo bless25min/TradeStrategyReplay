@@ -55,8 +55,7 @@ const patchPerformanceGameHtml = (html) => {
     .tutorial-highlight,.tutorial-message,.achievements-section,.bonus-challenge-section,
     #endGameModal,#stageCompleteModal,#challengeFailedModal,#nightmareRulesModal,.wave-timer,.footer-ad{display:none!important}
   </style>\n</head>`);
-  output = output.replace('</body>', `    <script src="scripts/overlay/equity-race.js"></script>
-    <script src="strategy-adapter.js"></script>
+  output = output.replace('</body>', `    <script src="strategy-adapter.js"></script>
     <script src="performance-adapter.js"></script>
 </body>`);
   return output;
@@ -77,6 +76,14 @@ const patchPerformanceMainJs = (source) => patchMainGhostPaths(source)
   .replace(
     'if (rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {',
     "if (typeof rpgState !== 'undefined' && rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {",
+  )
+  .replace(
+    'state.equity = startFunds;\n  state.balance = startFunds;',
+    `state.equity = startFunds;
+  state.balance = startFunds;
+  // Performance race baseline: BOTH user and strategy are rebased to this exact replay-window origin.
+  window.__tsrPerformanceBaselineEquity = startFunds;
+  window.__tsrPerformanceStartSec = state.m5GameData?.[0]?.time || state.gameData?.[0]?.time || 0;`,
   );
 
 const main = async () => {

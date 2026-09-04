@@ -23,7 +23,6 @@ const wanted = (sourcePath) => {
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const fetchOrThrow = async (url) => {
   let lastError = null;
   for (let attempt = 1; attempt <= 4; attempt += 1) {
@@ -34,11 +33,8 @@ const fetchOrThrow = async (url) => {
       });
       if (response.ok) return response;
       lastError = new Error(`Failed to fetch ${url}: ${response.status}`);
-      // Retry GitHub throttling / transient upstream failures, not permanent 404s.
       if (![408, 429, 500, 502, 503, 504].includes(response.status)) throw lastError;
-    } catch (error) {
-      lastError = error;
-    }
+    } catch (error) { lastError = error; }
     if (attempt < 4) await sleep(350 * (2 ** (attempt - 1)));
   }
   throw lastError || new Error(`Failed to fetch ${url}`);
@@ -61,7 +57,7 @@ const patchClassicGameHtml = (html) => {
 };
 
 const patchPerformanceGameHtml = (html) => {
-  let output = commonPatch(html, 'TradeStrategyReplay｜策略績效競速');
+  let output = commonPatch(html, 'TradeStrategyReplay｜策略績效圖表');
   output = output.replace(/\s*<script src="js\/rpg\.js"><\/script>/i, '');
   output = output.replace(/\s*<script src="js\/rpg_ui\.js"><\/script>/i, '');
   output = output.replace('</head>', `<style>
@@ -71,6 +67,7 @@ const patchPerformanceGameHtml = (html) => {
   </style>\n</head>`);
   output = output.replace('</body>', `    <script src="strategy-adapter.js"></script>
     <script src="performance-adapter.js"></script>
+    <script src="frame-adapter.js"></script>
 </body>`);
   return output;
 };
@@ -84,21 +81,67 @@ const patchMainGhostPaths = (source) => source
   .replace("{ url: 'SoyaRecord.json', label: 'Soya', defaultSymbol: 'XAUUSD' }", "{ url: '/legacy-source/SoyaRecord.json', label: 'Soya', defaultSymbol: 'XAUUSD' }")
   .replace("{ url: 'KentRecord.json', label: 'Kent', defaultSymbol: 'NAS100' }", "{ url: '/legacy-source/KentRecord.json', label: 'Kent', defaultSymbol: 'NAS100' }");
 
-const patchPerformanceMainJs = (source) => patchMainGhostPaths(source)
-  .replace('let startFunds = 5000;', 'let startFunds = 10000;')
-  .replace("if (localStorage.getItem('invite_bonus')) startFunds += 5000;", '// Performance variant uses a fixed comparison baseline.')
-  .replace(
-    'if (rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {',
-    "if (typeof rpgState !== 'undefined' && rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {",
-  )
-  .replace(
-    'state.equity = startFunds;\n  state.balance = startFunds;',
-    `state.equity = startFunds;
+const patchPerformanceMainJs = (source) => {
+  let output = patchMainGhostPaths(source)
+    .replace('let startFunds = 5000;', 'let startFunds = 10000;')
+    .replace("if (localStorage.getItem('invite_bonus')) startFunds += 5000;", '// Performance variant uses a fixed comparison baseline.')
+    .replace(
+      'if (rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {',
+      "if (typeof rpgState !== 'undefined' && rpgState && !rpgState.firstWaveTriggered && !rpgState.friendlyMode && state.gameStartTime) {",
+    )
+    .replace(
+      'state.equity = startFunds;\n  state.balance = startFunds;',
+      `state.equity = startFunds;
   state.balance = startFunds;
-  // Performance race baseline: BOTH user and strategy are rebased to this exact replay-window origin.
   window.__tsrPerformanceBaselineEquity = startFunds;
   window.__tsrPerformanceStartSec = state.m5GameData?.[0]?.time || state.gameData?.[0]?.time || 0;`,
+    );
+
+  // Workspace frames receive their instrument/timeframe from the parent page.
+  output = output.replace(
+    "const mode = urlParams.get('mode');",
+    `const mode = urlParams.get('mode');
+  if (urlParams.get('workspace') === '1') {
+    const workspaceSymbol = (urlParams.get('symbol') || '').toUpperCase();
+    const workspaceTimeframe = (urlParams.get('timeframe') || '').toUpperCase();
+    if (workspaceSymbol) state.selectedInstrument = workspaceSymbol;
+    if (['M5','M15','M30','H1','H4','D1'].includes(workspaceTimeframe)) state.selectedTimeframe = workspaceTimeframe;
+  }`,
   );
+  output = output.replace(
+    'cacheDOMElements();\n  setupEventListeners();',
+    `cacheDOMElements();
+  if (urlParams.get('workspace') === '1') {
+    if (DOM.instrumentSelector) DOM.instrumentSelector.value = state.selectedInstrument;
+    document.querySelectorAll('.timeframe-btn').forEach((button) => button.classList.toggle('active', button.dataset.timeframe === state.selectedTimeframe));
+  }
+  setupEventListeners();`,
+  );
+
+  // A workspace session chooses an explicit historical date range instead of a random 30-day slice.
+  output = output.replace(
+    'function selectRandomDataSegment(sourceData) {\n  if (sourceData.length === 0) return [];',
+    `function selectRandomDataSegment(sourceData) {
+  if (sourceData.length === 0) return [];
+  const workspaceParams = new URLSearchParams(window.location.search);
+  if (workspaceParams.get('workspace') === '1' && workspaceParams.get('start') && workspaceParams.get('end')) {
+    const startMs = Date.parse(workspaceParams.get('start') + 'T00:00:00Z');
+    const endMs = Date.parse(workspaceParams.get('end') + 'T23:59:59Z');
+    if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs) {
+      const startSec = Math.floor(startMs / 1000);
+      const endSec = Math.floor(endMs / 1000);
+      return sourceData.filter((bar) => bar.time >= startSec && bar.time <= endSec);
+    }
+  }`,
+  );
+
+  // Workspace parent owns the clock; child chart engine must start paused.
+  output = output.replace(
+    'state.isPlaying = true;',
+    "state.isPlaying = new URLSearchParams(window.location.search).get('workspace') !== '1';",
+  );
+  return output;
+};
 
 const main = async () => {
   for (const root of outputRoots) {
@@ -131,7 +174,6 @@ const main = async () => {
 
   await writeFile(classicGamePath, patchClassicGameHtml(await readFile(classicGamePath, 'utf8')), 'utf8');
   await writeFile(performanceGamePath, patchPerformanceGameHtml(await readFile(performanceGamePath, 'utf8')), 'utf8');
-  await writeFile(path.join(performanceRoot, 'index.html'), await readFile(performanceGamePath), 'utf8');
 
   await writeFile(classicDataPath, patchDataJs(await readFile(classicDataPath, 'utf8')), 'utf8');
   await writeFile(performanceDataPath, patchDataJs(await readFile(performanceDataPath, 'utf8')), 'utf8');
@@ -141,12 +183,14 @@ const main = async () => {
   const strategyAdapter = await readFile(path.resolve(process.cwd(), 'classic/strategy-adapter.js'));
   await writeFile(path.join(classicRoot, 'strategy-adapter.js'), strategyAdapter);
   await writeFile(path.join(performanceRoot, 'strategy-adapter.js'), strategyAdapter);
-  await writeFile(
-    path.join(performanceRoot, 'performance-adapter.js'),
-    await readFile(path.resolve(process.cwd(), 'performance/performance-adapter.js')),
-  );
+  await writeFile(path.join(performanceRoot, 'performance-adapter.js'), await readFile(path.resolve(process.cwd(), 'performance/performance-adapter.js')));
+  await writeFile(path.join(performanceRoot, 'frame-adapter.js'), await readFile(path.resolve(process.cwd(), 'workspace/frame-adapter.js')));
 
-  console.log(`Synced ${files.length} original SoyaPlayableAd UI assets into public/classic and public/performance.`);
+  // /performance/ is now the MT5-style multi-chart workspace; game.html remains the single-chart engine used by each frame.
+  await writeFile(path.join(performanceRoot, 'index.html'), await readFile(path.resolve(process.cwd(), 'workspace/index.html')));
+  await writeFile(path.join(performanceRoot, 'workspace.js'), await readFile(path.resolve(process.cwd(), 'workspace/workspace.js')));
+
+  console.log(`Synced ${files.length} original SoyaPlayableAd UI assets into public/classic and the /performance multi-chart workspace.`);
 };
 
 main().catch((error) => {

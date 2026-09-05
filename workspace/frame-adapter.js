@@ -41,11 +41,8 @@
     }
     #chartCanvas{display:block!important}
 
-    /* Restore the two pieces that were incorrectly removed in the previous workspace:
-       1) original trading / positions / history panel
-       2) user-vs-strategy performance race. */
-    .bottom-content-v9{display:block!important}
-    #tsr-performance-race{display:block!important}
+    /* Do NOT hide or re-layout .bottom-content-v9 / #tsr-performance-race here.
+       Their original responsive CSS is intentionally preserved. */
 
     .loader-wrap{background:#fff!important}
     .loader-scene{display:none!important}
@@ -88,25 +85,26 @@
       box-shadow:0 2px 8px rgba(15,23,42,.08)!important;
     }
 
-    /* Inside a multi-chart tile the iframe is usually narrow, so keep the original
-       trading UI compact without changing any of its event handlers. */
-    .bottom-content-v9{max-height:210px!important;overflow:hidden!important}
-    .bottom-nav-bar-v9{min-height:34px!important}
-    .bottom-nav-bar-v9 .nav-btn-v9{padding:7px 6px!important;font-size:11px!important}
-    .tab-content-v9{overflow:auto!important;max-height:174px!important}
-    .order-controls{gap:5px!important;padding:5px!important}
-    .input-group-horizontal{gap:5px!important}
-    .input-field{height:29px!important;font-size:12px!important;padding:4px 5px!important}
-    .trade-actions{gap:5px!important;padding:0 5px 5px!important}
-    .btn-trade{min-height:30px!important;padding:6px 4px!important;font-size:12px!important}
+    /* Narrow chart tiles use the original mobile layout (trade panel below chart).
+       Only compact spacing; event handlers and original controls remain untouched. */
+    @media (max-width:900px){
+      .bottom-content-v9{max-height:210px!important;overflow:hidden!important}
+      .bottom-nav-bar-v9{min-height:34px!important}
+      .bottom-nav-bar-v9 .nav-btn-v9{padding:7px 6px!important;font-size:11px!important}
+      .tab-content-v9{overflow:auto!important;max-height:174px!important}
+      .order-controls{gap:5px!important;padding:5px!important}
+      .input-group-horizontal{gap:5px!important}
+      .input-field{height:29px!important;font-size:12px!important;padding:4px 5px!important}
+      .trade-actions{gap:5px!important;padding:0 5px 5px!important}
+      .btn-trade{min-height:30px!important;padding:6px 4px!important;font-size:12px!important}
 
-    /* Keep the performance race visible but compact in each chart tile. */
-    #tsr-performance-race{flex:0 0 72px!important;min-height:72px!important;margin-top:2px!important}
-    #tsr-performance-race .tsr-race-head{height:18px!important;margin-bottom:0!important}
-    #tsr-performance-race .tsr-race-track{height:40px!important}
-    #tsr-performance-race .tsr-race-legend{display:none!important}
+      #tsr-performance-race{flex:0 0 72px!important;min-height:72px!important;margin-top:2px!important}
+      #tsr-performance-race .tsr-race-head{height:18px!important;margin-bottom:0!important}
+      #tsr-performance-race .tsr-race-track{height:40px!important}
+      #tsr-performance-race .tsr-race-legend{display:none!important}
+    }
 
-    @media (max-height:560px){
+    @media (max-width:900px) and (max-height:560px){
       .bottom-content-v9{max-height:172px!important}
       .tab-content-v9{max-height:136px!important}
       #tsr-performance-race{flex-basis:62px!important;min-height:62px!important}

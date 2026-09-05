@@ -5,27 +5,113 @@
   const chartId = params.get('chartId') || 'chart';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-  // Workspace frames are the ORIGINAL SoyaPlayableAd chart engine.
-  // We only remove page-level chrome that belongs to the standalone experience.
-  // chart.js / ui.js / main.js remain responsible for animation, drag, zoom and rendering.
+  // Workspace frames ARE the original SoyaPlayableAd experience.
+  // Keep chart.js / ui.js / trading.js / main.js, the trading dock and the
+  // performance race intact. Only remove duplicated page-level chrome and
+  // controls already provided by the workspace toolbar.
   const style = document.createElement('style');
   style.id = 'tsr-workspace-frame-style';
   style.textContent = `
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#fff!important}
-    .header,.bottom-content-v9,.controls-right,#tsr-performance-race,#notification-container,.footer-ad{display:none!important}
-    .main-container-v9{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;padding:0!important;margin:0!important}
-    .chart-container-v9{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important;padding:0!important;margin:0!important}
-    .chart-wrap{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;border:0!important;background:#fff!important}
-    #chartCanvas{width:100%!important;height:100%!important;display:block!important}
-    .loader-wrap{background:#fff!important}.loader-scene{display:none!important}#loader-status p{font-size:11px!important;color:#94a3b8!important}
 
-    /* Keep the original chart interaction layer. Only retain its zoom controls because
-       symbol/timeframe/playback are controlled by the workspace header. */
+    /* Remove only duplicated standalone chrome / game-only presentation. */
+    .header,.controls-right,#notification-container,.footer-ad{display:none!important}
+
+    /* IMPORTANT: preserve the original responsive layout. The original page already
+       uses main-container-v9 as chart + trading-content layout, so do not turn it into
+       an absolute full-screen chart layer. */
+    .main-container-v9{
+      flex:1 1 auto!important;
+      width:100%!important;
+      min-width:0!important;
+      min-height:0!important;
+      height:auto!important;
+      margin:0!important;
+      overflow:hidden!important;
+    }
+    .chart-container-v9{
+      min-width:0!important;
+      min-height:0!important;
+      overflow:hidden!important;
+    }
+    .chart-wrap{
+      min-width:0!important;
+      min-height:200px!important;
+      background:#fff!important;
+    }
+    #chartCanvas{display:block!important}
+
+    /* Restore the two pieces that were incorrectly removed in the previous workspace:
+       1) original trading / positions / history panel
+       2) user-vs-strategy performance race. */
+    .bottom-content-v9{display:block!important}
+    #tsr-performance-race{display:block!important}
+
+    .loader-wrap{background:#fff!important}
+    .loader-scene{display:none!important}
+    #loader-status p{font-size:11px!important;color:#94a3b8!important}
+
+    /* The workspace toolbar owns symbol / timeframe / play / speed. Keep the original
+       zoom controls inside each chart because they are part of the chart interaction. */
     .controls-overlay-container{display:block!important;pointer-events:none!important}
-    .controls-left{display:block!important;left:8px!important;top:8px!important;pointer-events:none!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
-    .controls-left .collapsible-controls{display:flex!important;opacity:1!important;visibility:visible!important;max-height:none!important;overflow:visible!important;gap:4px!important;pointer-events:none!important}
+    .controls-left{
+      display:block!important;
+      left:8px!important;
+      top:8px!important;
+      pointer-events:none!important;
+      background:transparent!important;
+      border:0!important;
+      box-shadow:none!important;
+      padding:0!important;
+    }
+    .controls-left .collapsible-controls{
+      display:flex!important;
+      opacity:1!important;
+      visibility:visible!important;
+      max-height:none!important;
+      overflow:visible!important;
+      gap:4px!important;
+      pointer-events:none!important;
+    }
     .controls-left .control-group,#timeframeSelector,#btnPlayPause,#btnStepForward,#speedSelector,#btnToggleControls{display:none!important}
-    #btnZoomIn,#btnZoomOut{display:inline-flex!important;pointer-events:auto!important;width:30px!important;height:30px!important;padding:0!important;align-items:center!important;justify-content:center!important;background:rgba(255,255,255,.92)!important;border:1px solid rgba(148,163,184,.55)!important;color:#475569!important;box-shadow:0 2px 8px rgba(15,23,42,.08)!important}
+    #btnZoomIn,#btnZoomOut{
+      display:inline-flex!important;
+      pointer-events:auto!important;
+      width:30px!important;
+      height:30px!important;
+      padding:0!important;
+      align-items:center!important;
+      justify-content:center!important;
+      background:rgba(255,255,255,.92)!important;
+      border:1px solid rgba(148,163,184,.55)!important;
+      color:#475569!important;
+      box-shadow:0 2px 8px rgba(15,23,42,.08)!important;
+    }
+
+    /* Inside a multi-chart tile the iframe is usually narrow, so keep the original
+       trading UI compact without changing any of its event handlers. */
+    .bottom-content-v9{max-height:210px!important;overflow:hidden!important}
+    .bottom-nav-bar-v9{min-height:34px!important}
+    .bottom-nav-bar-v9 .nav-btn-v9{padding:7px 6px!important;font-size:11px!important}
+    .tab-content-v9{overflow:auto!important;max-height:174px!important}
+    .order-controls{gap:5px!important;padding:5px!important}
+    .input-group-horizontal{gap:5px!important}
+    .input-field{height:29px!important;font-size:12px!important;padding:4px 5px!important}
+    .trade-actions{gap:5px!important;padding:0 5px 5px!important}
+    .btn-trade{min-height:30px!important;padding:6px 4px!important;font-size:12px!important}
+
+    /* Keep the performance race visible but compact in each chart tile. */
+    #tsr-performance-race{flex:0 0 72px!important;min-height:72px!important;margin-top:2px!important}
+    #tsr-performance-race .tsr-race-head{height:18px!important;margin-bottom:0!important}
+    #tsr-performance-race .tsr-race-track{height:40px!important}
+    #tsr-performance-race .tsr-race-legend{display:none!important}
+
+    @media (max-height:560px){
+      .bottom-content-v9{max-height:172px!important}
+      .tab-content-v9{max-height:136px!important}
+      #tsr-performance-race{flex-basis:62px!important;min-height:62px!important}
+      #tsr-performance-race .tsr-race-track{height:34px!important}
+    }
   `;
   document.head.appendChild(style);
 
@@ -136,6 +222,8 @@
         timeSec: currentSimTimeSec(),
         price: currentPrice(),
         equity: Number(state.equity || 0),
+        floatingPL: Number(state.floatingPL || 0),
+        positions: Number(state.openPositions?.length || 0),
         playing: !!state.isPlaying,
         speed: Number(state.speedMultiplier || 1),
       }, location.origin);
